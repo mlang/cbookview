@@ -1,0 +1,32 @@
+name:                cbookview
+version:             0.1.0.0
+github:              "mlang/cbookview"
+license:             BSD3
+author:              "Mario Lang"
+maintainer:          "mlang@blind.guru"
+copyright:           "2021 Mario Lang"
+
+extra-source-files:
+- README.md
+
+description:         A terminal application to explore commonly played chess openings
+
+dependencies:
+- base >= 4.7 && < 5
+- brick
+- chessIO >= 0.9.1.0
+- containers
+- extra
+- filepath
+- lens
+- rosezipper
+- vector
+- vty
+
+executables:
+  cbookview:
+    main:            cbookview.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
