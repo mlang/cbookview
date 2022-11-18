@@ -13,7 +13,7 @@ description:         A terminal application to explore commonly played chess ope
 
 dependencies:
 - base >= 4.7 && < 5
-- brick
+- brick >= 1.0
 - chessIO >= 0.9.1.0
 - containers
 - extra

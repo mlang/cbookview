@@ -1,8 +1,8 @@
-resolver: lts-18.16
+resolver: lts-20.0
 packages:
 - .
 extra-deps:
-- chessIO-0.9.1.0@sha256:ac0686edf5f9b950283e4919e12aa3567a8ef15962a1fce72fc2615aa03c22a7,5801
+- chessIO-0.9.3.0
 flags:
   brick:
     demos: false

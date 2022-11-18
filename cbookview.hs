@@ -3,11 +3,11 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE ViewPatterns      #-}
-import           Brick.AttrMap        (AttrName, attrMap)
+import           Brick.AttrMap        (AttrName, attrMap, attrName)
 import qualified Brick.Focus          as F
-import           Brick.Main           (App (..), continue, defaultMain, halt)
+import           Brick.Main           (App (..), defaultMain, halt)
 import           Brick.Types          (BrickEvent (VtyEvent), EventM,
-                                       Location (Location), Next, Widget)
+                                       Location (Location), Widget, modify)
 import           Brick.Util           (on)
 import           Brick.Widgets.Border (border, borderWithLabel)
 import           Brick.Widgets.Center (hCenter)
@@ -15,7 +15,7 @@ import           Brick.Widgets.Core   (hBox, hLimit, showCursor, str, strWrap,
                                        txt, txtWrap, vBox, vLimit, withAttr,
                                        (<+>), (<=>))
 import qualified Brick.Widgets.List   as L
-import           Control.Lens         (makeLenses, over, view, (&), (.~), (^.))
+import           Control.Lens         (makeLenses, view, (%=), (&), (.~), (^.))
 import           Control.Monad        (void)
 import           Data.Foldable        (foldl', toList)
 import           Data.Ix
@@ -42,7 +42,7 @@ import           Game.Chess.Polyglot  (bookForest, defaultBook,
                                        readPolyglotFile)
 import           Game.Chess.SAN       (toSAN, varToSAN)
 import           Game.Chess.Tree      (plyForest)
-import qualified Graphics.Vty         as V
+import qualified Graphics.Vty         as Vty
 import           System.Environment   (getArgs)
 import           System.FilePath
 
@@ -83,7 +83,7 @@ plyList (_treePos -> tp) = elemList List ply plies where
   plies = fmap (NonEmpty.last . rootLabel) . TreePos.forest $ tp
 
 selectedAttr :: AttrName
-selectedAttr = "selected"
+selectedAttr = attrName "selected"
 
 renderPosition :: Position -> Color -> Maybe Square -> Style Name -> Widget Name
 renderPosition pos persp tgt sty = ranks <+> border board <=> files where
@@ -128,59 +128,58 @@ withAttrIf :: Bool -> AttrName -> Widget n -> Widget n
 withAttrIf True attr = withAttr attr
 withAttrIf False _   = id
 
-type Command = St -> EventM Name (Next St)
+type Command = EventM Name St ()
 
 next, prev, firstChild, parent, root, firstLeaf :: Command
-next       = continue . over treePos (fromMaybe <*> TreePos.next)
-prev       = continue . over treePos (fromMaybe <*> TreePos.prev)
-firstChild = continue . over treePos (fromMaybe <*> TreePos.firstChild)
-parent     = continue . over treePos (fromMaybe <*> TreePos.parent)
-root       = continue . over treePos TreePos.root
-firstLeaf  = continue . over treePos go where
-  go tp = maybe tp go $ TreePos.firstChild tp
+next       = treePos %= (fromMaybe <*> TreePos.next)
+prev       = treePos %= (fromMaybe <*> TreePos.prev)
+firstChild = treePos %= (fromMaybe <*> TreePos.firstChild)
+parent     = treePos %= (fromMaybe <*> TreePos.parent)
+root       = treePos %= TreePos.root
+firstLeaf  = treePos %= go where go tp = maybe tp go $ TreePos.firstChild tp
 
 nextCursor, prevCursor :: Command
-nextCursor = continue . over focusRing F.focusNext
-prevCursor = continue . over focusRing F.focusPrev
+nextCursor = focusRing %= F.focusNext
+prevCursor = focusRing %= F.focusPrev
 
 allPlies, internalBook :: Command
-allPlies     = continue . (fromMaybe <*> loadForest plyForest startpos)
-internalBook = continue . (fromMaybe <*> loadForest (bookForest defaultBook) startpos)
+allPlies     = modify $ fromMaybe <*> loadForest plyForest startpos
+internalBook = modify $ fromMaybe <*> loadForest (bookForest defaultBook) startpos
 
 nextStyle, prevStyle :: Command
-nextStyle = continue . over boardStyle L.listMoveDown
-prevStyle = continue . over boardStyle L.listMoveUp
+nextStyle = boardStyle %= L.listMoveDown
+prevStyle = boardStyle %= L.listMoveUp
 
-keyMap :: Map V.Event Command
+keyMap :: Map Vty.Event Command
 keyMap = Map.fromList $ cursor <> vi <> common where
   cursor =
-    [ (V.EvKey V.KDown [],       next)
-    , (V.EvKey V.KUp [],         prev)
-    , (V.EvKey V.KRight [],      firstChild)
-    , (V.EvKey V.KLeft [],       parent)
-    , (V.EvKey V.KHome [],       root)
-    , (V.EvKey V.KEnd [],        firstLeaf)
+    [ (Vty.EvKey Vty.KDown [],       next)
+    , (Vty.EvKey Vty.KUp [],         prev)
+    , (Vty.EvKey Vty.KRight [],      firstChild)
+    , (Vty.EvKey Vty.KLeft [],       parent)
+    , (Vty.EvKey Vty.KHome [],       root)
+    , (Vty.EvKey Vty.KEnd [],        firstLeaf)
     ]
   common =
-    [ (V.EvKey (V.KChar '\t') [],        nextCursor)
-    , (V.EvKey (V.KChar '\t') [V.MMeta], prevCursor)
-    , (V.EvKey (V.KChar 'a') [],         allPlies)
-    , (V.EvKey (V.KChar 'd') [],         internalBook)
-    , (V.EvKey (V.KChar '+') [],         nextStyle)
-    , (V.EvKey (V.KChar '-') [],         prevStyle)
-    , (V.EvKey V.KEsc [],                halt)
-    , (V.EvKey (V.KChar 'q') [],         halt)
+    [ (Vty.EvKey (Vty.KChar '\t') [],        nextCursor)
+    , (Vty.EvKey (Vty.KChar '\t') [Vty.MMeta], prevCursor)
+    , (Vty.EvKey (Vty.KChar 'a') [],         allPlies)
+    , (Vty.EvKey (Vty.KChar 'd') [],         internalBook)
+    , (Vty.EvKey (Vty.KChar '+') [],         nextStyle)
+    , (Vty.EvKey (Vty.KChar '-') [],         prevStyle)
+    , (Vty.EvKey Vty.KEsc [],                halt)
+    , (Vty.EvKey (Vty.KChar 'q') [],         halt)
     ]
   vi =
-    [ (V.EvKey (V.KChar 'j') [], next)
-    , (V.EvKey (V.KChar 'k') [], prev)
-    , (V.EvKey (V.KChar 'l') [], firstChild)
-    , (V.EvKey (V.KChar 'h') [], parent)
+    [ (Vty.EvKey (Vty.KChar 'j') [], next)
+    , (Vty.EvKey (Vty.KChar 'k') [], prev)
+    , (Vty.EvKey (Vty.KChar 'l') [], firstChild)
+    , (Vty.EvKey (Vty.KChar 'h') [], parent)
     ]
 
 cbookview :: App St e Name
 cbookview = App { .. } where
-  appStartEvent = pure
+  appStartEvent = pure ()
   appDraw st = [ui] where
     ui = hBox [ hLimit 9 list
               , hLimit 23 $ hCenter board <=> str " " <=> eco
@@ -210,10 +209,9 @@ cbookview = App { .. } where
     board = renderPosition (position st) (color (previousPosition st)) (Just . targetSquare $ st) selectedStyle
     var = strWrap . varToSAN (st^.initialPosition) $ st^.treePos & TreePos.label & toList
     fen = str . toFEN $ position st
-  appHandleEvent st (VtyEvent e) = fromMaybe continue (Map.lookup e keyMap) st
-  appHandleEvent st _            = continue st
-  appAttrMap = const $ attrMap V.defAttr
-             [(selectedAttr, V.white `on` V.green)
+  appHandleEvent (VtyEvent e) = fromMaybe (pure ()) $ Map.lookup e keyMap
+  appAttrMap = const $ attrMap Vty.defAttr
+             [(selectedAttr, Vty.white `on` Vty.green)
              ]
   appChooseCursor = F.focusRingCursor (view focusRing)
 
