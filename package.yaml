@@ -27,6 +27,7 @@ executables:
   cbookview:
     main:            cbookview.hs
     ghc-options:
+    - -Wall
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N

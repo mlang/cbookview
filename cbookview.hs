@@ -210,6 +210,7 @@ cbookview = App { .. } where
     var = txtWrap . varToSAN (st^.initialPosition) $ st^.treePos & TreePos.label & toList
     fen = str . toFEN $ position st
   appHandleEvent (VtyEvent e) = fromMaybe (pure ()) $ Map.lookup e keyMap
+  appHandleEvent _            = pure ()
   appAttrMap = const $ attrMap Vty.defAttr
              [(selectedAttr, Vty.white `on` Vty.green)
              ]
