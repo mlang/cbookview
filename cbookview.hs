@@ -11,7 +11,7 @@ import           Brick.Types          (BrickEvent (VtyEvent), EventM,
 import           Brick.Util           (on)
 import           Brick.Widgets.Border (border, borderWithLabel)
 import           Brick.Widgets.Center (hCenter)
-import           Brick.Widgets.Core   (hBox, hLimit, showCursor, str, strWrap,
+import           Brick.Widgets.Core   (hBox, hLimit, putCursor, str, txtWrap,
                                        txt, txtWrap, vBox, vLimit, withAttr,
                                        (<+>), (<=>))
 import qualified Brick.Widgets.List   as L
@@ -87,14 +87,14 @@ selectedAttr = attrName "selected"
 
 renderPosition :: Position -> Color -> Maybe Square -> Style Name -> Widget Name
 renderPosition pos persp tgt sty = ranks <+> border board <=> files where
-  rev :: [a] -> [a]
   rev = if persp == Black then reverse else id
-  ranks = vBox (str " " : map (str . show) (rev [8 :: Int, 7..1]) <> [str " "])
+  ranks = vBox (space : map (str . show) (rev [8 :: Int, 7..1]) <> [space])
   files = str $ rev "   a b c d e f g h   "
   board = hLimit 17 . vLimit 8 . vBox $ map (hBox . spacer . map pc) squares
   squares = reverse $ chunksOf 8 $ rev [A1 .. H8]
   pc sq = putCursorIf (tgt == Just sq) Board (0,0) $ sty pos sq
-  spacer = (str " " :) . (<> [str " "]) . intersperse (str " ")
+  spacer = (space :) . (<> [space]) . intersperse space
+  space = txt " "
 
 allPieces :: ((Color, PieceType), (Color, PieceType))
 allPieces = ((Black, Pawn), (White, King))
@@ -121,7 +121,7 @@ styles = [ ("English",  english)
             | otherwise  -> str " "
 
 putCursorIf :: Bool -> n -> (Int, Int) -> Widget n -> Widget n
-putCursorIf True n loc = showCursor n $ Location loc
+putCursorIf True n loc = putCursor n $ Location loc
 putCursorIf False _ _  = id
 
 withAttrIf :: Bool -> AttrName -> Widget n -> Widget n
@@ -207,7 +207,7 @@ cbookview = App { .. } where
                   . withAttrIf foc selectedAttr
                   . str . toSAN p
     board = renderPosition (position st) (color (previousPosition st)) (Just . targetSquare $ st) selectedStyle
-    var = strWrap . varToSAN (st^.initialPosition) $ st^.treePos & TreePos.label & toList
+    var = txtWrap . varToSAN (st^.initialPosition) $ st^.treePos & TreePos.label & toList
     fen = str . toFEN $ position st
   appHandleEvent (VtyEvent e) = fromMaybe (pure ()) $ Map.lookup e keyMap
   appAttrMap = const $ attrMap Vty.defAttr

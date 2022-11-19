@@ -1,6 +1,9 @@
 # cbookview
 
-`cbookview` is a terminal application to explore commonly played openings.
+`cbookview` is a terminal application to explore commonly played chess openings.
+
+If no file is passed at the command line, `cbookview` will show
+its internal (default) opening book.
 Passing a polyglot opening book file (with extension `.bin`) on the command line
 will allow you to explore the plies contained in that book file interactively.
 You can also open a PGN file (extension `.pgn`) which will be presented like
@@ -38,8 +41,14 @@ position and game history.  As already mentioned, the moves in polyglot book fil
 are ordered according to popularity.  So pawn to a6 is actually the
 most popular line of the Ruy Lopez.
 
+Speaking about popular lines, you can use the Home key to move to
+the first ply, and the End key to move to the last ply of
+the current line.  So if you press End directly after starting `cbookview`
+you will actually see the most popular variation of the currently loaded book.
+
 ## The easteregg: Poor mans chessboard
 
 If you press `a` (for "All moves") cbookview will switch to the tree
 of all possible moves.  This is a poor mans way for following
 games and abusing cbookview as a two-player board.
+Pressing `d` (for "Default book") will load the internal polyglot book.
