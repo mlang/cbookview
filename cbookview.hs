@@ -11,11 +11,10 @@ import           Brick.Types          (BrickEvent (VtyEvent), EventM,
 import           Brick.Util           (on)
 import           Brick.Widgets.Border (border, borderWithLabel)
 import           Brick.Widgets.Center (hCenter)
-import           Brick.Widgets.Core   (hBox, hLimit, putCursor, str, txtWrap,
-                                       txt, txtWrap, vBox, vLimit, withAttr,
-                                       (<+>), (<=>))
+import           Brick.Widgets.Core   (hBox, hLimit, putCursor, str, txt,
+                                       txtWrap, vBox, vLimit, withAttr, (<+>),
+                                       (<=>))
 import qualified Brick.Widgets.List   as L
-import           Control.Lens         (makeLenses, view, (%=), (&), (.~), (^.))
 import           Control.Monad        (void)
 import           Data.Foldable        (foldl', toList)
 import           Data.Ix
@@ -43,6 +42,9 @@ import           Game.Chess.Polyglot  (bookForest, defaultBook,
 import           Game.Chess.SAN       (toSAN, varToSAN)
 import           Game.Chess.Tree      (plyForest)
 import qualified Graphics.Vty         as Vty
+import           Lens.Micro           ((&), (.~), (^.))
+import           Lens.Micro.Mtl       (view, (%=))
+import           Lens.Micro.TH        (makeLenses)
 import           System.Environment   (getArgs)
 import           System.FilePath
 

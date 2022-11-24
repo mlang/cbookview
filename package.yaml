@@ -18,7 +18,9 @@ dependencies:
 - containers
 - extra
 - filepath
-- lens
+- microlens
+- microlens-mtl
+- microlens-th
 - rosezipper
 - vector
 - vty
